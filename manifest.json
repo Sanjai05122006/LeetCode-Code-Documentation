@@ -1,0 +1,19 @@
+{
+    "manifest_version": 3,
+    "name": "leetcode-mangaer",
+    "version": "1.0",
+    "description": "This is a leetcode-manager extension",
+
+    "permissions": [
+        "storage","tabs"
+    ],
+
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "leetcode-manger@local.dev",
+            "data_collection_permissions": {
+                "required": ["none"]
+            }
+        }
+    }
+}
