@@ -5,14 +5,16 @@
 
   "permissions": [
     "tabs",
-    "scripting"
+    "scripting",
+    "storage"
   ],
 
   "host_permissions": [
-    "https://leetcode.com/*"
+    "https://leetcode.com/*",
+    "https://api.github.com/*"
   ],
 
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   }
 }
