@@ -1,7 +1,32 @@
-import { GITHUB_CONFIG } from "./env.js";
+let GITHUB_CONFIG = null;
 
+async function initGithubConfig() {
+  const stored = await browser.storage.local.get("githubConfig");
+
+  if (!stored.githubConfig) {
+    let url = browser.runtime.getURL("./env.json");
+    let res = await fetch(url);
+    let defaults = await res.json();
+
+    await browser.storage.local.set({
+      githubConfig: defaults
+    });
+
+    GITHUB_CONFIG = defaults;
+  } else {
+    GITHUB_CONFIG = stored.githubConfig;
+  }
+}
+
+initGithubConfig();
+console.log("GITHUB_CONFIG:", GITHUB_CONFIG);
 browser.runtime.onMessage.addListener(async (msg) => {
   if (msg.type !== "FETCH_SUBMISSION_DETAILS") return;
+
+  console.log("msg received in background:");
+  if (!GITHUB_CONFIG) {
+    await initGithubConfig();
+  }
 
   const { submissionId, pageUrl } = msg;
 
@@ -28,7 +53,6 @@ browser.runtime.onMessage.addListener(async (msg) => {
     const submission = lcJson?.data?.submissionDetails;
 
     if (!submission || submission.statusCode !== 10) {
-      console.log("[CP-Code-Manager] Not accepted. Skipping.");
       return;
     }
 
@@ -59,7 +83,6 @@ browser.runtime.onMessage.addListener(async (msg) => {
     const ghJson = await ghRes.json();
 
     if (!ghRes.ok) {
-      console.error("[CP-Code-Manager] GitHub push failed:", ghJson);
       return;
     }
 
