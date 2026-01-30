@@ -1,14 +1,4 @@
-# Nearest Exit from Entrance in Maze
 
-**Problem Link:** https://leetcode.com/problems/nearest-exit-from-entrance-in-maze/
-
-**Language:** Java
-
-**Topics:** Array, Breadth-First Search, Matrix
-
----
-
-```java
 class Solution {
     int bfs(char[][] maze, int[] entrance) {
         Queue<int[]> queue = new LinkedList<>();

@@ -1,14 +1,4 @@
-# House Robber
 
-**Problem Link:** https://leetcode.com/problems/house-robber/
-
-**Language:** Java
-
-**Topics:** Array, Dynamic Programming
-
----
-
-```java
 class Solution {
     public int rob(int[] nums) {
         int n = nums.length;

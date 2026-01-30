@@ -1,0 +1,37 @@
+<svg width="128" height="128" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="url(#grad)"/>
+  
+  <!-- Link Icon -->
+  <g transform="translate(32, 32)">
+    <!-- First link piece -->
+    <path d="M 25 15 L 40 15 C 48 15 52 19 52 27 C 52 35 48 39 40 39 L 25 39" 
+          stroke="white" 
+          stroke-width="6" 
+          fill="none" 
+          stroke-linecap="round"/>
+    
+    <!-- Second link piece -->
+    <path d="M 39 15 L 24 15 C 16 15 12 19 12 27 C 12 35 16 39 24 39 L 39 39" 
+          stroke="white" 
+          stroke-width="6" 
+          fill="none" 
+          stroke-linecap="round"
+          transform="translate(64, 54) rotate(180)"/>
+  </g>
+  
+  <!-- LC Text -->
+  <text x="64" y="95" 
+        font-family="Arial, sans-serif" 
+        font-size="24" 
+        font-weight="bold" 
+        fill="white" 
+        text-anchor="middle">LC</text>
+</svg>
