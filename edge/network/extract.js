@@ -19,4 +19,4 @@ fetch("https://leetcode.com/graphql", {
   })
 })
 .then(r => r.json())
-.then(d => console.log(d.data.submissionDetails.code));
+.then(d => console.log(d.data.submissionDetails));
