@@ -1,4 +1,3 @@
-{
   submissionDetails(submissionId: $submissionId) {
     runtime
     runtimeDisplay
@@ -57,4 +56,3 @@
     testInfo
     stdOutput
   }
-}
