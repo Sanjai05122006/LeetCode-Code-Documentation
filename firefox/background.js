@@ -19,11 +19,10 @@ async function initGithubConfig() {
 }
 
 initGithubConfig();
-console.log("GITHUB_CONFIG:", GITHUB_CONFIG);
+
 browser.runtime.onMessage.addListener(async (msg) => {
   if (msg.type !== "FETCH_SUBMISSION_DETAILS") return;
 
-  console.log("msg received in background:");
   if (!GITHUB_CONFIG) {
     await initGithubConfig();
   }
@@ -43,6 +42,12 @@ browser.runtime.onMessage.addListener(async (msg) => {
               code
               lang { verboseName }
               statusCode
+              question {
+                questionId
+                title
+                titleSlug
+                topicTags { name }
+              }
             }
           }
         `
@@ -52,41 +57,82 @@ browser.runtime.onMessage.addListener(async (msg) => {
     const lcJson = await lcRes.json();
     const submission = lcJson?.data?.submissionDetails;
 
-    if (!submission || submission.statusCode !== 10) {
-      return;
-    }
+    if (!submission || submission.statusCode !== 10) return;
 
-    const problemSlug = pageUrl.split("/problems/")[1].split("/")[0];
-    const ext = submission.lang.verboseName.toLowerCase().includes("python")
-      ? "py"
-      : "txt";
-
-    const filePath = `problems/${problemSlug}.${ext}`;
+    const q = submission.question;
+    const problemId = q.questionId;
+    const filename = `${problemId}-${submissionId}.txt`;
+    const filePath = `problems/${filename}`;
 
     const contentBase64 = btoa(unescape(encodeURIComponent(submission.code)));
 
-    const ghUrl = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/contents/${filePath}`;
+    const fileUrl = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/contents/${filePath}`;
 
-    const ghRes = await fetch(ghUrl, {
+    await fetch(fileUrl, {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
         "Accept": "application/vnd.github+json"
       },
       body: JSON.stringify({
-        message: `Add solution: ${problemSlug}`,
+        message: `Add submission ${submissionId} for ${q.titleSlug}`,
         content: contentBase64,
         branch: GITHUB_CONFIG.BRANCH
       })
     });
 
-    const ghJson = await ghRes.json();
+    const metaUrl = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/contents/problems.json`;
 
-    if (!ghRes.ok) {
-      return;
+    let meta = {};
+    let metaSha = null;
+
+    const metaRes = await fetch(metaUrl, {
+      headers: {
+        "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
+        "Accept": "application/vnd.github+json"
+      }
+    });
+
+    if (metaRes.ok) {
+      const metaJson = await metaRes.json();
+      metaSha = metaJson.sha;
+      meta = JSON.parse(atob(metaJson.content));
     }
 
-    console.log("[CP-Code-Manager] Successfully pushed to GitHub:", ghJson.content.path);
+    if (!meta[problemId]) {
+      meta[problemId] = {
+        questionId: problemId,
+        title: q.title,
+        titleSlug: q.titleSlug,
+        topics: q.topicTags.map(t => t.name),
+        submissions: []
+      };
+    }
+
+    meta[problemId].submissions.push({
+      submissionId,
+      path: filePath,
+      lang: submission.lang.verboseName,
+      timestamp: Date.now()
+    });
+
+    const metaContent = btoa(unescape(encodeURIComponent(JSON.stringify(meta, null, 2))));
+
+    await fetch(metaUrl, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
+        "Accept": "application/vnd.github+json"
+      },
+      body: JSON.stringify({
+        message: `Update problems.json for ${q.titleSlug}`,
+        content: metaContent,
+        sha: metaSha,
+        branch: GITHUB_CONFIG.BRANCH
+      })
+    });
+
+    console.log("[CP-Code-Manager] Submission stored:", filePath);
 
   } catch (err) {
     console.error("[CP-Code-Manager] Error:", err);
