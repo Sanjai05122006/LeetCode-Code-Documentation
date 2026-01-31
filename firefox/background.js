@@ -1,3 +1,21 @@
+const LANG_EXT_MAP = {
+  "Python3": "py",
+  "Python": "py",
+  "Java": "java",
+  "C++": "cpp",
+  "C": "c",
+  "JavaScript": "js",
+  "TypeScript": "ts",
+  "Go": "go",
+  "Rust": "rs",
+  "Kotlin": "kt",
+  "Swift": "swift",
+  "C#": "cs",
+  "Ruby": "rb",
+  "PHP": "php",
+  "Scala": "scala"
+};
+
 let GITHUB_CONFIG = null;
 
 async function initGithubConfig() {
@@ -61,7 +79,11 @@ browser.runtime.onMessage.addListener(async (msg) => {
 
     const q = submission.question;
     const problemId = q.questionId;
-    const filename = `${problemId}-${submissionId}.txt`;
+
+    const langName = submission.lang.verboseName;
+    const ext = LANG_EXT_MAP[langName] || "txt";
+
+    const filename = `${problemId}-${submissionId}.${ext}`;
     const filePath = `problems/${filename}`;
 
     const contentBase64 = btoa(unescape(encodeURIComponent(submission.code)));
