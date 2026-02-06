@@ -1,15 +1,40 @@
-(() => {
+function handleSubmissionPage() {
   const match = location.pathname.match(/submissions\/(\d+)/);
   if (!match) return;
 
   const submissionId = Number(match[1]);
-
-  console.log("[CP-Code-Manager][content] submissionId:", submissionId);
 
   browser.runtime.sendMessage({
     type: "FETCH_SUBMISSION_DETAILS",
     submissionId,
     pageUrl: location.href
   });
-  console.log("msg sent from content:");
+}
+
+(function () {
+  let lastUrl = location.href;
+
+  const _pushState = history.pushState;
+  const _replaceState = history.replaceState;
+
+  history.pushState = function () {
+    _pushState.apply(this, arguments);
+    onUrlChange();
+  };
+
+  history.replaceState = function () {
+    _replaceState.apply(this, arguments);
+    onUrlChange();
+  };
+
+  window.addEventListener("popstate", onUrlChange);
+
+  function onUrlChange() {
+    if (location.href !== lastUrl) {
+      lastUrl = location.href;
+      setTimeout(handleSubmissionPage, 0);
+    }
+  }
+
+  handleSubmissionPage();
 })();
