@@ -5,7 +5,7 @@
   "description": "Extracts accepted LeetCode submissions and prepares them for GitHub sync.",
 
   "permissions": [
-    "storage"
+    "storage","tabs"
   ],
 
   "host_permissions": [

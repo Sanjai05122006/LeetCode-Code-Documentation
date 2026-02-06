@@ -17,14 +17,17 @@ const LANG_EXT_MAP = {
 };
 
 let GITHUB_CONFIG = null;
+let lastSubmissionId = null;
+let problemsJsonLock = Promise.resolve();
+
 
 async function initGithubConfig() {
   const stored = await browser.storage.local.get("githubConfig");
 
   if (!stored.githubConfig) {
-    let url = browser.runtime.getURL("./env.json");
-    let res = await fetch(url);
-    let defaults = await res.json();
+    const url = browser.runtime.getURL("./env.json");
+    const res = await fetch(url);
+    const defaults = await res.json();
 
     await browser.storage.local.set({
       githubConfig: defaults
@@ -38,9 +41,14 @@ async function initGithubConfig() {
 
 initGithubConfig();
 
+
+function extractSubmissionIdFromUrl(url) {
+  const match = url?.match(/submissions\/(\d+)/);
+  return match ? Number(match[1]) : null;
+}
+
 async function fetchSubmissionWithRetry(submissionId) {
   let retries = 6;
-  let submission = null;
 
   while (retries--) {
     const res = await fetch("https://leetcode.com/graphql", {
@@ -68,7 +76,7 @@ async function fetchSubmissionWithRetry(submissionId) {
     });
 
     const json = await res.json();
-    submission = json?.data?.submissionDetails;
+    const submission = json?.data?.submissionDetails;
 
     if (submission && submission.statusCode === 10) {
       return submission;
@@ -81,12 +89,12 @@ async function fetchSubmissionWithRetry(submissionId) {
 }
 
 async function updateProblemsJson(problemId, q, submissionId, filePath, lang) {
-  const metaUrl = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/contents/problems.json`;
+  problemsJsonLock = problemsJsonLock.then(async () => {
+    const metaUrl = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/contents/problems.json`;
 
-  let meta = {};
-  let metaSha = null;
+    let meta = {};
+    let metaSha = null;
 
-  const fetchMeta = async () => {
     const res = await fetch(metaUrl, {
       headers: {
         "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
@@ -99,33 +107,29 @@ async function updateProblemsJson(problemId, q, submissionId, filePath, lang) {
       metaSha = json.sha;
       meta = JSON.parse(atob(json.content));
     }
-  };
 
-  await fetchMeta();
+    if (!meta[problemId]) {
+      meta[problemId] = {
+        questionId: problemId,
+        title: q.title,
+        titleSlug: q.titleSlug,
+        topics: q.topicTags.map(t => t.name),
+        submissions: []
+      };
+    }
 
-  if (!meta[problemId]) {
-    meta[problemId] = {
-      questionId: problemId,
-      title: q.title,
-      titleSlug: q.titleSlug,
-      topics: q.topicTags.map(t => t.name),
-      submissions: []
-    };
-  }
+    meta[problemId].submissions.push({
+      submissionId,
+      path: filePath,
+      lang,
+      timestamp: Date.now()
+    });
 
-  meta[problemId].submissions.push({
-    submissionId,
-    path: filePath,
-    lang,
-    timestamp: Date.now()
-  });
+    const metaContent = btoa(
+      unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))
+    );
 
-  const metaContent = btoa(
-    unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))
-  );
-
-  const put = async () => {
-    return fetch(metaUrl, {
+    const putRes = await fetch(metaUrl, {
       method: "PUT",
       headers: {
         "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
@@ -138,28 +142,28 @@ async function updateProblemsJson(problemId, q, submissionId, filePath, lang) {
         branch: GITHUB_CONFIG.BRANCH
       })
     });
-  };
 
-  let res = await put();
+    if (!putRes.ok) {
+      throw await putRes.json();
+    }
+  }).catch(err => {
+    console.error("[CP-Code-Manager] problems.json update failed:", err);
+  });
 
-  if (res.status === 409) {
-    await fetchMeta();
-    res = await put();
-  }
-
-  if (!res.ok) {
-    throw await res.json();
-  }
+  return problemsJsonLock;
 }
 
-browser.runtime.onMessage.addListener(async (msg) => {
-  if (msg.type !== "FETCH_SUBMISSION_DETAILS") return;
 
+async function handlePossibleSubmission(url) {
   if (!GITHUB_CONFIG) {
     await initGithubConfig();
   }
 
-  const { submissionId } = msg;
+  const submissionId = extractSubmissionIdFromUrl(url);
+  if (!submissionId) return;
+
+  if (submissionId === lastSubmissionId) return;
+  lastSubmissionId = submissionId;
 
   try {
     const submission = await fetchSubmissionWithRetry(submissionId);
@@ -205,5 +209,29 @@ browser.runtime.onMessage.addListener(async (msg) => {
 
   } catch (err) {
     console.error("[CP-Code-Manager] Error:", err);
+  }
+}
+
+browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.url) {
+    handlePossibleSubmission(changeInfo.url);
+  }
+});
+
+browser.tabs.onActivated.addListener(async (activeInfo) => {
+  const tab = await browser.tabs.get(activeInfo.tabId);
+  if (tab.url) {
+    handlePossibleSubmission(tab.url);
+  }
+});
+
+browser.runtime.onStartup.addListener(async () => {
+  const tabs = await browser.tabs.query({
+    active: true,
+    currentWindow: true
+  });
+
+  if (tabs[0]?.url) {
+    handlePossibleSubmission(tabs[0].url);
   }
 });
