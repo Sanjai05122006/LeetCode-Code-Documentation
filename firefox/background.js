@@ -18,11 +18,17 @@ const LANG_EXT_MAP = {
 
 let GITHUB_CONFIG = null;
 let lastSubmissionId = null;
+let pendingSubmissionId = null;
 let problemsJsonLock = Promise.resolve();
+let autoSubmitEnabled = true;
 
+/* -------------------- CONFIG INIT -------------------- */
 
 async function initGithubConfig() {
-  const stored = await browser.storage.local.get("githubConfig");
+  const stored = await browser.storage.local.get([
+    "githubConfig",
+    "autoSubmitEnabled"
+  ]);
 
   if (!stored.githubConfig) {
     const url = browser.runtime.getURL("./env.json");
@@ -37,15 +43,25 @@ async function initGithubConfig() {
   } else {
     GITHUB_CONFIG = stored.githubConfig;
   }
+
+  if (typeof stored.autoSubmitEnabled === "boolean") {
+    autoSubmitEnabled = stored.autoSubmitEnabled;
+  } else {
+    await browser.storage.local.set({ autoSubmitEnabled: true });
+    autoSubmitEnabled = true;
+  }
 }
 
 initGithubConfig();
 
+/* -------------------- URL HELPERS -------------------- */
 
 function extractSubmissionIdFromUrl(url) {
   const match = url?.match(/submissions\/(\d+)/);
   return match ? Number(match[1]) : null;
 }
+
+/* -------------------- LEETCODE FETCH -------------------- */
 
 async function fetchSubmissionWithRetry(submissionId) {
   let retries = 6;
@@ -87,6 +103,8 @@ async function fetchSubmissionWithRetry(submissionId) {
 
   return null;
 }
+
+/* -------------------- problems.json MUTEX UPDATE -------------------- */
 
 async function updateProblemsJson(problemId, q, submissionId, filePath, lang) {
   problemsJsonLock = problemsJsonLock.then(async () => {
@@ -153,18 +171,9 @@ async function updateProblemsJson(problemId, q, submissionId, filePath, lang) {
   return problemsJsonLock;
 }
 
+/* -------------------- CORE SUBMISSION LOGIC -------------------- */
 
-async function handlePossibleSubmission(url) {
-  if (!GITHUB_CONFIG) {
-    await initGithubConfig();
-  }
-
-  const submissionId = extractSubmissionIdFromUrl(url);
-  if (!submissionId) return;
-
-  if (submissionId === lastSubmissionId) return;
-  lastSubmissionId = submissionId;
-
+async function submitToGithub(submissionId) {
   try {
     const submission = await fetchSubmissionWithRetry(submissionId);
     if (!submission) return;
@@ -212,17 +221,58 @@ async function handlePossibleSubmission(url) {
   }
 }
 
+/* -------------------- CONTROL FUNCTION -------------------- */
+
+async function controlSubmission(submissionId) {
+  pendingSubmissionId = submissionId;
+
+  if (autoSubmitEnabled) {
+    await submitToGithub(submissionId);
+    pendingSubmissionId = null;
+  } else {
+    console.log("[CP-Code-Manager] Manual mode. Submission pending:", submissionId);
+  }
+}
+
+/* -------------------- MANUAL TRIGGER -------------------- */
+
+browser.runtime.onMessage.addListener(async (msg) => {
+  if (msg.type === "MANUAL_SUBMIT" && pendingSubmissionId) {
+    await submitToGithub(pendingSubmissionId);
+    pendingSubmissionId = null;
+  }
+
+  if (msg.type === "SET_AUTO_SUBMIT") {
+    autoSubmitEnabled = !!msg.value;
+    await browser.storage.local.set({
+      autoSubmitEnabled
+    });
+  }
+});
+
+/* -------------------- TAB / SPA HOOKS -------------------- */
+
 browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.url) {
-    handlePossibleSubmission(changeInfo.url);
+    const submissionId = extractSubmissionIdFromUrl(changeInfo.url);
+    if (!submissionId) return;
+    if (submissionId === lastSubmissionId) return;
+
+    lastSubmissionId = submissionId;
+    controlSubmission(submissionId);
   }
 });
 
 browser.tabs.onActivated.addListener(async (activeInfo) => {
   const tab = await browser.tabs.get(activeInfo.tabId);
-  if (tab.url) {
-    handlePossibleSubmission(tab.url);
-  }
+  if (!tab.url) return;
+
+  const submissionId = extractSubmissionIdFromUrl(tab.url);
+  if (!submissionId) return;
+  if (submissionId === lastSubmissionId) return;
+
+  lastSubmissionId = submissionId;
+  controlSubmission(submissionId);
 });
 
 browser.runtime.onStartup.addListener(async () => {
@@ -231,7 +281,11 @@ browser.runtime.onStartup.addListener(async () => {
     currentWindow: true
   });
 
-  if (tabs[0]?.url) {
-    handlePossibleSubmission(tabs[0].url);
-  }
+  if (!tabs[0]?.url) return;
+
+  const submissionId = extractSubmissionIdFromUrl(tabs[0].url);
+  if (!submissionId) return;
+
+  lastSubmissionId = submissionId;
+  controlSubmission(submissionId);
 });
