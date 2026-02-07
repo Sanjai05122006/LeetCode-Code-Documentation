@@ -17,15 +17,18 @@
   },
 
   "content_scripts": [
+  {
+    "matches": ["https://leetcode.com/*"],
+    "js": ["ui.js"],
+    "run_at": "document_idle"
+  }
+],
+ "web_accessible_resources": [
     {
-      "matches": [
-        "https://leetcode.com/problems/*/submissions/*"
-      ],
-      "js": ["content.js"],
-      "run_at": "document_idle"
+      "resources": ["ui.html"],
+      "matches": ["https://leetcode.com/*"]
     }
   ],
-
   "browser_specific_settings": {
     "gecko": {
       "id": "cp-code-manager@leetcode",
