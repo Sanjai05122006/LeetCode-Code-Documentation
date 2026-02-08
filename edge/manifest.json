@@ -3,29 +3,35 @@
   "name": "LeetCode Git Sync",
   "version": "1.0.0",
   "description": "Automatically sync your LeetCode solutions to GitHub",
+
   "icons": {
     "16": "icon.svg",
     "48": "icon.svg",
     "128": "icon.svg"
   },
+
   "permissions": [
     "tabs",
     "scripting",
     "storage",
     "notifications"
   ],
+
   "host_permissions": [
     "https://leetcode.com/*",
     "https://api.github.com/*"
   ],
+
   "background": {
-    "scripts": ["background.js"]
+    "service_worker": "background.js"
   },
+
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icon.svg",
     "default_title": "LeetCode Git Sync Settings"
   },
+
   "content_scripts": [
     {
       "matches": ["https://leetcode.com/problems/*/submissions/*"],
