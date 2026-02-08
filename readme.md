@@ -20,14 +20,6 @@ Once a solution is accepted on LeetCode, the extension extracts the code and syn
 
 ---
 
-## 📸 Screenshots
-
-- Extension Settings Popup  
-- Accepted Submission Page with Sync UI  
-- GitHub Repository with Synced Solutions  
-
-
----
 
 ## 📑 Table of Contents
 
