@@ -1,131 +1,69 @@
-# 📌 LeetCode Git Sync
+# LeetCode Git Sync
 
-LeetCode Git Sync is a browser extension that automates saving accepted LeetCode solutions directly into a GitHub repository using the GitHub REST API.  
-It streamlines the workflow of competitive programmers by eliminating manual copying and pushing of solutions.
+LeetCode Git Sync is a browser extension that automatically saves accepted LeetCode solutions to a GitHub repository.  
+It removes the need to manually copy code and push it to GitHub.
 
 ---
 
-## 🧾 Project Overview
+## Project Overview
 
-LeetCode Git Sync is designed to help developers automatically document their coding practice.  
+LeetCode Git Sync helps developers document their coding practice effortlessly.  
 Once a solution is accepted on LeetCode, the extension extracts the code and syncs it to GitHub in an organized format with minimal user interaction.
 
 ---
 
-## 🔧 Version & Platform
+## Supported Platforms
 
-- **Browser Extension**
-- **Manifest Version:** 3
-- **Supported Browsers:** Edge,Firefox
-
----
-
-
-## 📑 Table of Contents
-
-- Features and Capabilities
-- Technology Stack  
-- Installation  
-- Manual Usage  
-- GitHub Output Format  
-- Security Considerations  
-- Contributors  
+- Firefox
+- Edge
 
 ---
 
-## ✨ Features
+## Features
 
-### Core Functionality
-- Automatic detection of **Accepted** LeetCode submissions
-- Direct syncing of solutions to GitHub
+- Automatic detection of accepted LeetCode submissions
 - Manual and auto-sync support
-- Clean and organized solution storage
-
-### Advanced Capabilities
 - Multi-language solution support
-- GitHub Personal Access Token authentication
-- Seamless operation with LeetCode SPA navigation
-- Minimal UI interaction required
+- Works on SPA pages like leetcode
 
 ---
 
-## 🧠 Business Logic
+## Technology Stack
 
-- Detects LeetCode submission pages dynamically
-- Fetches submission details using LeetCode GraphQL
-- Extracts:
-  - Source code
-  - Programming language
-  - Problem metadata
-- Pushes solutions to GitHub using REST API
-- Prevents duplicate uploads and handles updates cleanly
-
----
-
-## 🛠️ Technology Stack
-
-### Extension Technologies
-- JavaScript (ES6+)
+- JavaScript
 - WebExtension APIs
-- HTML5 / CSS3
-
-### APIs Used
 - LeetCode GraphQL API
 - GitHub REST API
 
-### Storage
-- Browser Local Storage (for configuration)
-
 ---
-
-## ⚙️ Installation
-
-### Prerequisites
-- Chromium-based browser (Edge / Chrome)
-- GitHub account
-- GitHub Personal Access Token with `repo` permission
-
-### Steps
-1. Open `edge://extensions` or `chrome://extensions`
-2. Enable **Developer Mode**
-3. Click **Load unpacked**
-4. Select the extension folder
-5. The extension is now installed
-
----
-
-## ▶️ Manual Usage
 
 ### Configure GitHub
-1. Click the extension icon
+
+1. Open the extension UI on a LeetCode submission page
 2. Enter:
    - GitHub username
    - Repository name
+   - Branch
    - Personal Access Token
-3. Save configuration
+3. Save the configuration
 
 ---
 
 ### Sync a LeetCode Solution
-1. Open any LeetCode problem
-2. Submit your solution
-3. Ensure the submission status is **Accepted**
-4. Navigate to the submission details page
-5. The extension UI appears automatically
-6. Click **“Push to GitHub”**
-7. Solution is uploaded to the configured repository
+
+1. Submit a solution on LeetCode
+2. Ensure the submission status is Accepted
+3. Open the submission details page
+4. The extension UI appears automatically
+5. Click Push to GitHub or enable auto-sync
+6. The solution is uploaded to the configured repository
 
 ---
 
-## 📂 GitHub Output Format
+## Security Considerations
 
-Solutions are stored in the repository as:
+- GitHub Personal Access Token is provided by the user
+- Credentials are stored locally in the browser
+- No data is sent to any service other than GitHub
 
-```text
-leetcode/
-├── array/
-│   └── two-sum.js
-├── dp/
-│   └── climbing-stairs.py
-└── graph/
-    └── number-of-islands.java
+---
