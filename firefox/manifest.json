@@ -25,7 +25,7 @@
 ],
  "web_accessible_resources": [
     {
-      "resources": ["ui.html"],
+      "resources": ["ui.html","ui.css"],
       "matches": ["https://leetcode.com/*"]
     }
   ],

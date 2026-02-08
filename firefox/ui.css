@@ -1,0 +1,94 @@
+#__cp_code_manager_ui__ {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+#__cp_code_manager_ui__ h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#__cp_code_manager_ui__ .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+#__cp_code_manager_ui__ .field label {
+  font-size: 12px;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+#__cp_code_manager_ui__ input[type="text"],
+#__cp_code_manager_ui__ input[type="password"] {
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  outline: none;
+  background: #1f2937;
+  color: #fff;
+  font-size: 13px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+#__cp_code_manager_ui__ input[type="text"]:focus,
+#__cp_code_manager_ui__ input[type="password"]:focus {
+  border-color: #22c55e;
+}
+
+#__cp_code_manager_ui__ input::placeholder {
+  color: #9ca3af;
+}
+
+#__cp_code_manager_ui__ input[type="checkbox"] {
+  accent-color: #22c55e;
+  cursor: pointer;
+}
+
+#__cp_code_manager_ui__ .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+#__cp_code_manager_ui__ button {
+  margin-top: 8px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: #000;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+  width: 100%;
+}
+
+#__cp_code_manager_ui__ button:hover {
+  background: #16a34a;
+}
+
+#__cp_code_manager_ui__ button:active {
+  transform: scale(0.98);
+}
+
+/* Make the config form stack properly */
+#__cp_code_manager_ui__ #configForm {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Same for main controls */
+#__cp_code_manager_ui__ #mainControls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}

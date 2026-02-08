@@ -237,6 +237,11 @@ async function controlSubmission(submissionId) {
 /* -------------------- MANUAL TRIGGER -------------------- */
 
 browser.runtime.onMessage.addListener(async (msg) => {
+  if (msg.type === "GITHUB_CONFIG_UPDATED") {
+    await initGithubConfig();
+    console.log("[CP-Code-Manager] GitHub config reloaded");
+  }
+  
   if (msg.type === "MANUAL_SUBMIT" && pendingSubmissionId) {
     await submitToGithub(pendingSubmissionId);
     pendingSubmissionId = null;

@@ -1,20 +1,29 @@
 <div id="cp-ui-root">
 
   <div id="configForm" style="display:none;">
+    <h3>GitHub Configuration</h3>
+
     <div class="field">
-      <input placeholder="GitHub Owner" id="cfgOwner" />
-    </div>
-    <div class="field">
-      <input placeholder="Repository Name" id="cfgRepo" />
-    </div>
-    <div class="field">
-      <input placeholder="Branch (main)" id="cfgBranch" />
-    </div>
-    <div class="field">
-      <input placeholder="GitHub PAT" id="cfgPat" />
+      <label for="cfgOwner">Owner</label>
+      <input id="cfgOwner" type="text" placeholder="username" />
     </div>
 
-    <button id="saveConfigBtn">Save Config</button>
+    <div class="field">
+      <label for="cfgRepo">Repository</label>
+      <input id="cfgRepo" type="text" placeholder="repo-name" />
+    </div>
+
+    <div class="field">
+      <label for="cfgBranch">Branch</label>
+      <input id="cfgBranch" type="text" placeholder="main" />
+    </div>
+
+    <div class="field">
+      <label for="cfgPat">GitHub PAT</label>
+      <input id="cfgPat" type="password" placeholder="ghp_..." />
+    </div>
+
+    <button id="saveConfigBtn">Save Configuration</button>
   </div>
 
   <div id="mainControls" style="display:none;">
@@ -22,7 +31,7 @@
       <input type="checkbox" id="autoSubmitToggle" />
       <span>Auto Submit</span>
     </label>
-<br />
+
     <button id="manualSubmitBtn">Submit Now</button>
   </div>
 

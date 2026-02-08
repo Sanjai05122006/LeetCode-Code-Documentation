@@ -1,4 +1,5 @@
 const UI_ID = "__cp_code_manager_ui__";
+const CSS_ID = "__cp_code_manager_ui_css__";
 
 /* ---------- helpers ---------- */
 
@@ -10,10 +11,26 @@ function hasValidConfig(cfg) {
     cfg.PAT;
 }
 
+/* ---------- CSS injection ---------- */
+
+function injectCSS() {
+  if (document.getElementById(CSS_ID)) return;
+
+  const link = document.createElement("link");
+  link.id = CSS_ID;
+  link.rel = "stylesheet";
+  link.type = "text/css";
+  link.href = browser.runtime.getURL("ui.css");
+
+  document.head.appendChild(link);
+}
+
 /* ---------- UI injection ---------- */
 
 function injectUI() {
   if (document.getElementById(UI_ID)) return;
+
+  injectCSS();
 
   const container = document.createElement("div");
   container.id = UI_ID;
@@ -22,17 +39,20 @@ function injectUI() {
     position: "fixed",
     bottom: "40px",
     right: "40px",
-    padding: "10px",
-    width: "180px",
+    padding: "16px",
+    width: "320px",
+    minHeight: "auto",
+    maxHeight: "600px",
     background: "#111",
     color: "#fff",
-    borderRadius: "8px",
+    borderRadius: "12px",
     zIndex: "999999",
     fontSize: "12px",
-    boxShadow: "0 0 12px rgba(0,0,0,0.7)",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
     display: "flex",
     flexDirection: "column",
-    gap: "8px"
+    gap: "12px",
+    overflow: "auto"
   });
 
   const htmlUrl = browser.runtime.getURL("ui.html");
@@ -42,7 +62,6 @@ function injectUI() {
     .then(html => {
       container.innerHTML = html;
       document.body.appendChild(container);
-      injectStyles();
       wireUI();
     });
 }
@@ -50,63 +69,6 @@ function injectUI() {
 function removeUI() {
   const el = document.getElementById(UI_ID);
   if (el) el.remove();
-}
-
-/* ---------- styles ---------- */
-
-function injectStyles() {
-  if (document.getElementById("__cp_ui_styles__")) return;
-
-  const style = document.createElement("style");
-  style.id = "__cp_ui_styles__";
-  style.textContent = `
-    #${UI_ID} label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-    }
-
-    #${UI_ID} input[type="checkbox"] {
-      accent-color: #4ade80;
-      cursor: pointer;
-    }
-
-    #${UI_ID} input {
-      width: 100%;
-      padding: 5px;
-      border-radius: 4px;
-      border: none;
-      font-size: 12px;
-      box-sizing: border-box;
-    }
-
-    #${UI_ID} button {
-      padding: 6px;
-      border: none;
-      border-radius: 6px;
-      background: #4ade80;
-      color: #000;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.15s ease, transform 0.05s ease;
-    }
-
-    #${UI_ID} button:hover {
-      background: #22c55e;
-    }
-
-    #${UI_ID} button:active {
-      transform: scale(0.97);
-    }
-
-    #${UI_ID} .field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-  `;
-  document.head.appendChild(style);
 }
 
 /* ---------- wiring ---------- */
@@ -147,6 +109,18 @@ function wireConfigForm() {
     await browser.storage.local.set({
       githubConfig: config
     });
+    
+    browser.runtime.sendMessage({
+    type: "GITHUB_CONFIG_UPDATED"
+    });
+
+    console.log("submited",config);   
+
+    const stored_check = await browser.storage.local.get([
+    "githubConfig",
+    "autoSubmitEnabled"
+  ]);
+  console.log("check result",stored_check);
 
     wireUI();
   });
