@@ -64,7 +64,7 @@ function extractSubmissionIdFromUrl(url) {
 /* -------------------- LEETCODE FETCH -------------------- */
 
 async function fetchSubmissionWithRetry(submissionId) {
-  let retries = 6;
+  let retries =    6;
 
   while (retries--) {
     const res = await fetch("https://leetcode.com/graphql", {
@@ -110,66 +110,80 @@ async function updateProblemsJson(problemId, q, submissionId, filePath, lang) {
   problemsJsonLock = problemsJsonLock.then(async () => {
     const metaUrl = `https://api.github.com/repos/${GITHUB_CONFIG.OWNER}/${GITHUB_CONFIG.REPO}/contents/problems.json`;
 
-    let meta = {};
-    let metaSha = null;
+    let attempts = 3;
 
-    const res = await fetch(metaUrl, {
-      headers: {
-        "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
-        "Accept": "application/vnd.github+json"
+    while (attempts--) {
+      let meta = {};
+      let metaSha = null;
+
+      const res = await fetch(metaUrl, {
+        headers: {
+          "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
+          "Accept": "application/vnd.github+json"
+        }
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        metaSha = json.sha;
+        meta = JSON.parse(atob(json.content));
       }
-    });
 
-    if (res.ok) {
-      const json = await res.json();
-      metaSha = json.sha;
-      meta = JSON.parse(atob(json.content));
+      if (!meta[problemId]) {
+        meta[problemId] = {
+          questionId: problemId,
+          title: q.title,
+          titleSlug: q.titleSlug,
+          topics: q.topicTags.map(t => t.name),
+          submissions: []
+        };
+      }
+
+      meta[problemId].submissions.push({
+        submissionId,
+        path: filePath,
+        lang,
+        timestamp: Date.now()
+      });
+
+      const metaContent = btoa(
+        unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))
+      );
+
+      const putRes = await fetch(metaUrl, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
+          "Accept": "application/vnd.github+json"
+        },
+        body: JSON.stringify({
+          message: `Update problems.json for ${q.titleSlug}`,
+          content: metaContent,
+          sha: metaSha,
+          branch: GITHUB_CONFIG.BRANCH
+        })
+      });
+
+      if (putRes.ok) {
+        return; // ✅ success
+      }
+
+      if (putRes.status !== 409) {
+        throw await putRes.json(); // real error
+      }
+
+      // 409 → retry with fresh SHA
+      await new Promise(r => setTimeout(r, 300));
     }
 
-    if (!meta[problemId]) {
-      meta[problemId] = {
-        questionId: problemId,
-        title: q.title,
-        titleSlug: q.titleSlug,
-        topics: q.topicTags.map(t => t.name),
-        submissions: []
-      };
-    }
-
-    meta[problemId].submissions.push({
-      submissionId,
-      path: filePath,
-      lang,
-      timestamp: Date.now()
-    });
-
-    const metaContent = btoa(
-      unescape(encodeURIComponent(JSON.stringify(meta, null, 2)))
-    );
-
-    const putRes = await fetch(metaUrl, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${GITHUB_CONFIG.PAT}`,
-        "Accept": "application/vnd.github+json"
-      },
-      body: JSON.stringify({
-        message: `Update problems.json for ${q.titleSlug}`,
-        content: metaContent,
-        sha: metaSha,
-        branch: GITHUB_CONFIG.BRANCH
-      })
-    });
-
-    if (!putRes.ok) {
-      throw await putRes.json();
-    }
+    throw new Error("Failed to update problems.json after retries");
   }).catch(err => {
     console.error("[CP-Code-Manager] problems.json update failed:", err);
   });
 
   return problemsJsonLock;
 }
+
 
 /* -------------------- CORE SUBMISSION LOGIC -------------------- */
 
