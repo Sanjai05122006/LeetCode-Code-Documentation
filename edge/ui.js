@@ -1,6 +1,4 @@
 // CP Code Manager ui.js
-console.log("[CP-Code-Manager] ui.js LOADED", location.href);
-
 const _br = globalThis.chrome || globalThis.browser;
 const HOST_ID = "__cp_mgr_host__";
 
@@ -8,9 +6,8 @@ function hasValidConfig(cfg) {
   return !!(cfg && cfg.OWNER && cfg.REPO && cfg.BRANCH && cfg.PAT);
 }
 
-// Only show on ACCEPTED submission pages
-function isAcceptedSubmissionPage() {
-  return location.pathname.match(/\/submissions\/\d+/);
+function isOnSubmissionPage() {
+  return !!location.pathname.match(/\/submissions\/\d+/);
 }
 
 const STYLES = `
@@ -61,12 +58,8 @@ const STYLES = `
     line-height: 1.5;
     border-top: 1px solid #27272a;
     padding-top: 10px;
-    margin-top: 2px;
   }
-  .hint a {
-    color: #22c55e;
-    text-decoration: none;
-  }
+  .hint a { color: #22c55e; text-decoration: none; }
   .hint a:hover { text-decoration: underline; }
   .status {
     font-size: 11px;
@@ -76,9 +69,8 @@ const STYLES = `
     color: #a1a1aa;
     text-align: center;
   }
-  .status.checking { color: #facc15; }
   .status.accepted { color: #22c55e; }
-  .status.rejected { color: #f87171; }
+  .status.rejected  { color: #f87171; }
 `;
 
 const CONFIG_HTML = `
@@ -100,15 +92,14 @@ const CONFIG_HTML = `
       <label>Personal Access Token (PAT)</label>
       <input id="cfgPat" type="password" placeholder="ghp_..." />
     </div>
-    <button class="btn" id="saveBtn">Save & Connect</button>
+    <button class="btn" id="saveBtn">Save &amp; Connect</button>
     <div class="hint">
       🔑 <strong style="color:#d4d4d8">How to get a PAT:</strong><br/>
-      GitHub → <em>Settings → Developer settings →<br/>
-      Personal access tokens → Tokens (classic)</em><br/>
-      → Generate new token → check <strong style="color:#d4d4d8">repo</strong> scope → copy token.
-      <br/><br/>
+      GitHub → Settings → Developer settings →<br/>
+      Personal access tokens → Tokens (classic)<br/>
+      → Generate new token → tick <strong style="color:#d4d4d8">repo</strong> scope → copy.<br/><br/>
       <a href="https://github.com/settings/tokens/new?scopes=repo&description=CP-Code-Manager" target="_blank">
-        → Click here to create token directly ↗
+        → Create token directly ↗
       </a>
     </div>
   </div>
@@ -117,9 +108,9 @@ const CONFIG_HTML = `
 const MAIN_HTML = `
   <div id="mainControls">
     <div class="title">✅ CP Code Manager</div>
-    <div id="submissionStatus" class="status checking">Checking submission…</div>
+    <div id="subStatus" class="status">Checking submission…</div>
     <label class="row">
-      <input type="checkbox" id="autoToggle" checked />
+      <input type="checkbox" id="autoToggle" />
       <span>Auto-push to GitHub</span>
     </label>
     <button class="btn" id="pushBtn">⬆ Push Now</button>
@@ -127,80 +118,83 @@ const MAIN_HTML = `
   </div>
 `;
 
-/* ── Check if current submission page is Accepted ── */
-async function isAccepted() {
-  // Try reading from the page DOM first (fastest)
-  const verdict = document.querySelector('[data-e2e-locator="submission-result"]');
-  if (verdict) {
-    const text = verdict.textContent.trim().toLowerCase();
-    console.log("[CP-Code-Manager] DOM verdict:", text);
-    return text === "accepted";
-  }
-
-  // Fallback: check URL submission ID via GraphQL
+/* ── Single, clean waitForAccepted ── */
+async function waitForAccepted(maxWaitMs = 6000) {
+  const interval = 500;
+  let elapsed = 0;
   const match = location.pathname.match(/\/submissions\/(\d+)/);
   if (!match) return false;
   const submissionId = Number(match[1]);
 
-  try {
-    const res = await fetch("https://leetcode.com/graphql", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        operationName: "submissionDetails",
-        variables: { submissionId },
-        query: `query submissionDetails($submissionId: Int!) {
-          submissionDetails(submissionId: $submissionId) {
-            statusCode
-          }
-        }`
-      })
-    });
-    const json = await res.json();
-    const code = json?.data?.submissionDetails?.statusCode;
-    console.log("[CP-Code-Manager] GraphQL statusCode:", code);
-    return code === 10; // 10 = Accepted
-  } catch (e) {
-    console.warn("[CP-Code-Manager] Could not verify acceptance:", e.message);
-    return false;
+  while (elapsed <= maxWaitMs) {
+    // 1. DOM selectors (fast path)
+    const domSelectors = [
+      '[data-e2e-locator="submission-result"]',
+      'span.text-green-s',
+      'span[class*="text-green"]',
+      'div[class*="accepted" i]'
+    ];
+    for (const sel of domSelectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        const text = el.textContent.trim().toLowerCase();
+        if (text.includes("accepted")) return true;
+        if (text.match(/wrong|error|limit|runtime|compile/)) return false;
+      }
+    }
+
+    // 2. GraphQL (most reliable)
+    try {
+      const res = await fetch("https://leetcode.com/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          operationName: "submissionDetails",
+          variables: { submissionId },
+          query: `query submissionDetails($submissionId: Int!) {
+            submissionDetails(submissionId: $submissionId) { statusCode }
+          }`
+        })
+      });
+      const json = await res.json();
+      const code = json?.data?.submissionDetails?.statusCode;
+      if (code !== undefined && code !== null) return code === 10;
+    } catch (_) { /* retry */ }
+
+    await new Promise(r => setTimeout(r, interval));
+    elapsed += interval;
   }
+  return false;
 }
 
+/* ── Inject UI into shadow DOM ── */
 function inject(configured) {
-  console.log("[CP-Code-Manager] inject(), configured:", configured);
-
   const old = document.getElementById(HOST_ID);
   if (old) old.remove();
 
   const host = document.createElement("div");
   host.id = HOST_ID;
   host.setAttribute("style",
-    "position:fixed!important;" +
-    "bottom:40px!important;" +
-    "right:40px!important;" +
-    "width:320px!important;" +
-    "z-index:2147483647!important;" +
-    "pointer-events:auto!important;" +
-    "display:block!important"
+    "position:fixed!important;bottom:40px!important;right:40px!important;" +
+    "width:320px!important;z-index:2147483647!important;" +
+    "pointer-events:auto!important;display:block!important"
   );
 
   const shadow = host.attachShadow({ mode: "open" });
   document.documentElement.appendChild(host);
-
   shadow.innerHTML = `<style>${STYLES}</style><div id="wrap">${configured ? MAIN_HTML : CONFIG_HTML}</div>`;
 
-  if (!configured) {
-    wireConfigForm(shadow);
-  } else {
-    wireMainControls(shadow);
-  }
+  configured ? wireMainControls(shadow) : wireConfigForm(shadow);
 }
 
-function wireConfigForm(shadow) {
-  const saveBtn = shadow.getElementById("saveBtn");
-  if (!saveBtn) return;
+function removeUI() {
+  const h = document.getElementById(HOST_ID);
+  if (h) h.remove();
+}
 
-  saveBtn.onclick = async () => {
+/* ── Wire config form ── */
+function wireConfigForm(shadow) {
+  shadow.getElementById("saveBtn").onclick = async () => {
     const config = {
       OWNER:  shadow.getElementById("cfgOwner").value.trim(),
       REPO:   shadow.getElementById("cfgRepo").value.trim(),
@@ -210,19 +204,17 @@ function wireConfigForm(shadow) {
     if (!hasValidConfig(config)) { alert("Please fill in all fields."); return; }
     await _br.storage.local.set({ githubConfig: config });
     _br.runtime.sendMessage({ type: "GITHUB_CONFIG_UPDATED" });
-    console.log("[CP-Code-Manager] Config saved!");
     checkAndShow();
   };
 }
 
+/* ── Wire main controls ── */
 function wireMainControls(shadow) {
   const toggle   = shadow.getElementById("autoToggle");
   const pushBtn  = shadow.getElementById("pushBtn");
   const resetBtn = shadow.getElementById("resetBtn");
-  const statusEl = shadow.getElementById("submissionStatus");
-  if (!toggle) return;
+  const statusEl = shadow.getElementById("subStatus");
 
-  // Read saved auto setting
   _br.storage.local.get("autoSubmitEnabled").then(res => {
     toggle.checked = res.autoSubmitEnabled !== false;
   });
@@ -234,76 +226,63 @@ function wireMainControls(shadow) {
     checkAndShow();
   };
 
-  // Show accepted/rejected status in UI
-  isAccepted().then(accepted => {
-    if (statusEl) {
-      if (accepted) {
-        statusEl.textContent = "✅ Accepted — pushing to GitHub…";
-        statusEl.className = "status accepted";
-      } else {
-        statusEl.textContent = "❌ Not accepted — nothing pushed";
-        statusEl.className = "status rejected";
-      }
+  // Update status label after acceptance check
+  waitForAccepted().then(accepted => {
+    if (!statusEl) return;
+    if (accepted) {
+      statusEl.textContent = "✅ Accepted — pushed to GitHub";
+      statusEl.className = "status accepted";
+    } else {
+      statusEl.textContent = "❌ Not accepted — nothing pushed";
+      statusEl.className = "status rejected";
     }
   });
 }
 
-/* ── Main logic: only show UI on accepted submissions ── */
+/* ── Main decision logic ── */
 async function checkAndShow() {
-  const res = await _br.storage.local.get("githubConfig");
-  const configured = hasValidConfig(res.githubConfig);
-  const onSubmissionPage = !!isAcceptedSubmissionPage();
+  const { githubConfig } = await _br.storage.local.get("githubConfig");
+  const configured = hasValidConfig(githubConfig);
 
-  console.log("[CP-Code-Manager] checkAndShow — onSubmission:", onSubmissionPage, "configured:", configured);
-
-  if (!onSubmissionPage) {
-    // Not on a submission page — remove UI entirely
-    const h = document.getElementById(HOST_ID);
-    if (h) h.remove();
+  if (!isOnSubmissionPage()) {
+    removeUI();
     return;
   }
 
-  // On a submission page — check if accepted
-  // Show UI immediately (config form or controls), then verify acceptance
+  // On submission page + not configured → show config form
   if (!configured) {
-    // Always show config form on submission pages so user can set up
     inject(false);
     return;
   }
 
-  // Config is set — check if accepted before showing controls
-  const accepted = await isAccepted();
+  // On submission page + configured → only show if accepted
+  const accepted = await waitForAccepted();
   if (accepted) {
     inject(true);
   } else {
-    // Not accepted — remove UI, don't show anything
-    const h = document.getElementById(HOST_ID);
-    if (h) h.remove();
-    console.log("[CP-Code-Manager] Submission not accepted, UI hidden.");
+    removeUI();
   }
 }
 
-// ── Boot ──
+/* ── Boot ── */
 checkAndShow();
 document.addEventListener("DOMContentLoaded", checkAndShow);
 window.addEventListener("load", checkAndShow);
 
-// SPA nav watcher
+// SPA navigation watcher
 let _lastUrl = location.href;
 new MutationObserver(() => {
   if (location.href !== _lastUrl) {
     _lastUrl = location.href;
-    console.log("[CP-Code-Manager] URL changed:", location.href);
     setTimeout(checkAndShow, 600);
   }
 }).observe(document, { subtree: true, childList: true });
 
-// Survival timer — only re-inject if we SHOULD be showing
+// Survival: re-inject config form if removed and still not configured
 setInterval(() => {
-  if (!isAcceptedSubmissionPage()) return;
-  _br.storage.local.get("githubConfig").then(res => {
-    const configured = hasValidConfig(res.githubConfig);
-    if (!configured && !document.getElementById(HOST_ID)) {
+  if (!isOnSubmissionPage()) return;
+  _br.storage.local.get("githubConfig").then(({ githubConfig }) => {
+    if (!hasValidConfig(githubConfig) && !document.getElementById(HOST_ID)) {
       inject(false);
     }
   });
