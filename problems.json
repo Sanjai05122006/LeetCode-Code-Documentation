@@ -34,6 +34,24 @@
       }
     ]
   },
+  "3": {
+    "questionId": "3",
+    "title": "Longest Substring Without Repeating Characters",
+    "titleSlug": "longest-substring-without-repeating-characters",
+    "topics": [
+      "Hash Table",
+      "String",
+      "Sliding Window"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1931997773,
+        "path": "problems/3-1931997773.java",
+        "lang": "Java",
+        "timestamp": 1772123542703
+      }
+    ]
+  },
   "4": {
     "questionId": "4",
     "title": "Median of Two Sorted Arrays",
