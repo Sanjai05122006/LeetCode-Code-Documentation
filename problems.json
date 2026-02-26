@@ -52,6 +52,22 @@
       }
     ]
   },
+  "7": {
+    "questionId": "7",
+    "title": "Reverse Integer",
+    "titleSlug": "reverse-integer",
+    "topics": [
+      "Math"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1931821129,
+        "path": "problems/7-1931821129.js",
+        "lang": "JavaScript",
+        "timestamp": 1772111275838
+      }
+    ]
+  },
   "218": {
     "questionId": "218",
     "title": "The Skyline Problem",
