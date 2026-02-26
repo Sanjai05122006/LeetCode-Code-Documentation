@@ -16,6 +16,24 @@
       }
     ]
   },
+  "2": {
+    "questionId": "2",
+    "title": "Add Two Numbers",
+    "titleSlug": "add-two-numbers",
+    "topics": [
+      "Linked List",
+      "Math",
+      "Recursion"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1931810759,
+        "path": "problems/2-1931810759.cpp",
+        "lang": "C++",
+        "timestamp": 1772110427093
+      }
+    ]
+  },
   "218": {
     "questionId": "218",
     "title": "The Skyline Problem",
