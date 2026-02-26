@@ -110,6 +110,23 @@
       }
     ]
   },
+  "153": {
+    "questionId": "153",
+    "title": "Find Minimum in Rotated Sorted Array",
+    "titleSlug": "find-minimum-in-rotated-sorted-array",
+    "topics": [
+      "Array",
+      "Binary Search"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1932118676,
+        "path": "problems/153-1932118676.java",
+        "lang": "Java",
+        "timestamp": 1772130151448
+      }
+    ]
+  },
   "218": {
     "questionId": "218",
     "title": "The Skyline Problem",
