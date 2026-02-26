@@ -1,0 +1,25 @@
+{
+  "218": {
+    "questionId": "218",
+    "title": "The Skyline Problem",
+    "titleSlug": "the-skyline-problem",
+    "topics": [
+      "Array",
+      "Divide and Conquer",
+      "Binary Indexed Tree",
+      "Segment Tree",
+      "Sweep Line",
+      "Sorting",
+      "Heap (Priority Queue)",
+      "Ordered Set"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1931804115,
+        "path": "problems/218-1931804115.py",
+        "lang": "Python3",
+        "timestamp": 1772109854158
+      }
+    ]
+  }
+}
