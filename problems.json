@@ -86,6 +86,24 @@
       }
     ]
   },
+  "10": {
+    "questionId": "10",
+    "title": "Regular Expression Matching",
+    "titleSlug": "regular-expression-matching",
+    "topics": [
+      "String",
+      "Dynamic Programming",
+      "Recursion"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1931998952,
+        "path": "problems/10-1931998952.java",
+        "lang": "Java",
+        "timestamp": 1772123610624
+      }
+    ]
+  },
   "218": {
     "questionId": "218",
     "title": "The Skyline Problem",
