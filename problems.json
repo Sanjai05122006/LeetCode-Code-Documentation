@@ -149,5 +149,23 @@
         "timestamp": 1772109854158
       }
     ]
+  },
+  "1895": {
+    "questionId": "1895",
+    "title": "Minimum Number of Operations to Move All Balls to Each Box",
+    "titleSlug": "minimum-number-of-operations-to-move-all-balls-to-each-box",
+    "topics": [
+      "Array",
+      "String",
+      "Prefix Sum"
+    ],
+    "submissions": [
+      {
+        "submissionId": 1932632810,
+        "path": "problems/1895-1932632810.java",
+        "lang": "Java",
+        "timestamp": 1772183989998
+      }
+    ]
   }
 }
