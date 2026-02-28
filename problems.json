@@ -186,5 +186,19 @@
         "timestamp": 1772183989998
       }
     ]
+  },
+  "4231": {
+    "questionId": "4231",
+    "title": "Smallest Pair With Different Frequencies",
+    "titleSlug": "smallest-pair-with-different-frequencies",
+    "topics": [],
+    "submissions": [
+      {
+        "submissionId": 1933837003,
+        "path": "problems/4231-1933837003.java",
+        "lang": "Java",
+        "timestamp": 1772293535578
+      }
+    ]
   }
 }
